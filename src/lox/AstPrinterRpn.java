@@ -37,6 +37,11 @@ class AstPrinterRpn implements Expr.Visitor<String> {
     }
 
     @Override
+    public String visitLogicalExpr(Expr.Logical expr) {
+        return "";
+    }
+
+    @Override
     public String visitUnaryExpr(Expr.Unary expr) {
         // RPN: Operando -> Operador unario
         return expr.right.accept(this) + " " + expr.operator.lexeme;
