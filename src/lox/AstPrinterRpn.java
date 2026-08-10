@@ -25,6 +25,16 @@ class AstPrinterRpn implements Expr.Visitor<String> {
     }
 
     @Override
+    public String visitFunctionExpr(Expr.Function expr) {
+        return "";
+    }
+
+    @Override
+    public String visitCallExpr(Expr.Call expr) {
+        return "";
+    }
+
+    @Override
     public String visitGroupingExpr(Expr.Grouping expr) {
         // En RPN no hay paréntesis, solo visitamos la expresión interna
         return expr.expression.accept(this);
