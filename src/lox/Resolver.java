@@ -43,10 +43,15 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         currentFunction = type;
 
         beginScope();
-        for (Token param : function.params) {
-            declare(param);
-            define(param);
+
+        // Declare and define parameters in the new scope
+        if (function.params != null) {
+            for (Token param : function.params) {
+                declare(param);
+                define(param);
+            }
         }
+
         resolve(function.body);
         endScope();
         currentFunction = enclosingFunction;
@@ -71,11 +76,19 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         beginScope();
         scopes.peek().put("this", VariableState.DEFINED);
 
+        // Resolver static methods
+        for (Stmt.Function method : stmt.staticMethods) {
+            resolveFunction(method, FunctionType.METHOD);
+        }
+
+        // Resolve instance methods (including the logic of init)
         for (Stmt.Function method : stmt.methods) {
             FunctionType declaration = FunctionType.METHOD;
+
             if (method.name.lexeme.equals("init")) {
                 declaration = FunctionType.INITIALIZER;
             }
+
             resolveFunction(method, declaration);
         }
 
@@ -280,7 +293,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         Map<String, VariableState> scope = scopes.pop();
 
         for (Map.Entry<String, VariableState> entry : scope.entrySet()) {
-            if (entry.getValue() != VariableState.READ) {
+            if (entry.getValue() != VariableState.READ && !entry.getKey().equals("this") && !entry.getKey().equals("super")) {
                 Lox.error(new Token(TokenType.IDENTIFIER, entry.getKey(), null, 0), "local variable '" + entry.getKey() + "' is never used.");
             }
         }

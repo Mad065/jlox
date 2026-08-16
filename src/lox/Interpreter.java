@@ -170,13 +170,21 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitClassStmt(Stmt.Class stmt) {
         environment.define(stmt.name.lexeme, null);
 
+        Map<String, LoxFunction> staticMethods = new HashMap<>();
+        for (Stmt.Function method : stmt.staticMethods) {
+            LoxFunction function = new LoxFunction(method, environment, method.name.lexeme.equals("init"));
+            staticMethods.put(method.name.lexeme, function);
+        }
+
+        LoxClass metaclass = new LoxClass(null, stmt.name.lexeme + " metaclass", staticMethods);
+
         Map<String, LoxFunction> methods = new HashMap<>();
         for (Stmt.Function method : stmt.methods) {
             LoxFunction function = new LoxFunction(method, environment, method.name.lexeme.equals("init"));
             methods.put(method.name.lexeme, function);
         }
 
-        LoxClass klass = new LoxClass(stmt.name.lexeme, methods);
+        LoxClass klass = new LoxClass(metaclass, stmt.name.lexeme, methods);
         environment.assign(stmt.name, klass);
         return null;
     }
@@ -344,12 +352,20 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitGetExpr(Expr.Get expr) {
         Object object = evaluate(expr.object);
+
         if (object instanceof LoxInstance) {
-            return ((LoxInstance) object).get(expr.name);
+            Object result = ((LoxInstance) object).get(expr.name);
+
+            // return getter method
+            if (result instanceof LoxFunction && ((LoxFunction) result).isGetter()) {
+                return ((LoxFunction) result).call(this, new ArrayList<>());
+            }
+
+            // return normal method
+            return result;
         }
 
-        throw new RuntimeError(expr.name,
-                "Only instances have properties.");
+        throw new RuntimeError(expr.name, "Only instances have properties.");
     }
 
     @Override

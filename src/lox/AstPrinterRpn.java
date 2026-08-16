@@ -35,6 +35,11 @@ class AstPrinterRpn implements Expr.Visitor<String> {
     }
 
     @Override
+    public String visitGetExpr(Expr.Get expr) {
+        return "";
+    }
+
+    @Override
     public String visitGroupingExpr(Expr.Grouping expr) {
         // En RPN no hay paréntesis, solo visitamos la expresión interna
         return expr.expression.accept(this);
@@ -48,6 +53,16 @@ class AstPrinterRpn implements Expr.Visitor<String> {
 
     @Override
     public String visitLogicalExpr(Expr.Logical expr) {
+        return "";
+    }
+
+    @Override
+    public String visitSetExpr(Expr.Set expr) {
+        return "";
+    }
+
+    @Override
+    public String visitThisExpr(Expr.This expr) {
         return "";
     }
 

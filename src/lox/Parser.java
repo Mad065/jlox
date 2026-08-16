@@ -48,14 +48,22 @@ class Parser {
         consume(LEFT_BRACE, "Expect '{' before class body.");
 
         List<Stmt.Function> methods = new ArrayList<>();
+        List<Stmt.Function> staticMethods = new ArrayList<>();
+
         while (!check(RIGHT_BRACE) && !isAtEnd()) {
-            methods.add(function("method"));
+            // static methods
+            if (match(CLASS)) {
+                staticMethods.add(function("method"));
+            } else {
+                methods.add(function("method"));
+            }
         }
 
         consume(RIGHT_BRACE, "Expect '}' after class body.");
 
-        return new Stmt.Class(name, methods);
+        return new Stmt.Class(name, methods, staticMethods);
     }
+
 
     private Stmt statement() {
         if (match(FOR)) return forStatement();
@@ -207,18 +215,25 @@ class Parser {
 
 
     private Expr.Function functionBody(String kind) {
-        consume(LEFT_PAREN, "Expect '(' after " + kind + ".");
+        List<Token> parameters = null;
 
-        List<Token> parameters = new ArrayList<>();
-        if (!check(RIGHT_PAREN)) {
-            do {
-                if (parameters.size() >= 255) {
-                    error(peek(), "Can't have more than 255 parameters.");
-                }
-                parameters.add(consume(IDENTIFIER, "Expect parameter name."));
-            } while (match(COMMA));
+        // getter
+        if (kind.equals("method") && check(LEFT_BRACE)) {
+            // it's a getter, no parameters
+        } else {
+            // normal function
+            consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
+            parameters = new ArrayList<>();
+            if (!check(RIGHT_PAREN)) {
+                do {
+                    if (parameters.size() >= 255) {
+                        error(peek(), "Can't have more than 255 parameters.");
+                    }
+                    parameters.add(consume(IDENTIFIER, "Expect parameter name."));
+                } while (match(COMMA));
+            }
+            consume(RIGHT_PAREN, "Expect ')' after parameters.");
         }
-        consume(RIGHT_PAREN, "Expect ')' after parameters.");
 
         consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
         List<Stmt> body = block();

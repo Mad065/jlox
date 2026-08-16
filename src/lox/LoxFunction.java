@@ -1,5 +1,6 @@
 package lox;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class LoxFunction implements LoxCallable {
@@ -8,39 +9,47 @@ class LoxFunction implements LoxCallable {
     private final List<Stmt> body;
     private final Environment closure;
     private final boolean isInitializer;
+    private final boolean isGetter;
 
     // function declaration
     LoxFunction(Stmt.Function declaration, Environment closure, boolean isInitializer) {
         this.isInitializer = isInitializer;
+        this.isGetter = (declaration.params == null); // null for getters
         this.name = declaration.name.lexeme;
-        this.parameters = declaration.params;
+        this.parameters = declaration.params != null ? declaration.params : new ArrayList<>();
         this.body = declaration.body;
         this.closure = closure;
     }
 
-    // function expression (anonymous function, lambda)
+    // function expression (lambdas)
     LoxFunction(Expr.Function declaration, Environment closure, boolean isInitializer) {
         this.isInitializer = isInitializer;
+        this.isGetter = false; // Las lambdas nunca son getters
         this.name = null;
         this.parameters = declaration.params;
         this.body = declaration.body;
         this.closure = closure;
     }
 
-    // function constructor for function bind
-    private LoxFunction(String name, List<Token> parameters, List<Stmt> body, Environment closure, boolean isInitializer) {
+    // Constructor private for bind()
+    private LoxFunction(String name, List<Token> parameters, List<Stmt> body, Environment closure, boolean isInitializer, boolean isGetter) {
         this.isInitializer = isInitializer;
+        this.isGetter = isGetter;
         this.name = name;
         this.parameters = parameters;
         this.body = body;
         this.closure = closure;
     }
 
-
     LoxFunction bind(LoxInstance instance) {
         Environment environment = new Environment(closure);
         environment.define("this", instance);
-        return new LoxFunction(name, parameters, body, environment, isInitializer);
+        return new LoxFunction(name, parameters, body, environment, isInitializer, isGetter);
+    }
+
+    // getters in java
+    public boolean isGetter() {
+        return isGetter;
     }
 
     @Override
